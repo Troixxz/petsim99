@@ -1,0 +1,73 @@
+-- Wait for the game to load
+repeat
+    task.wait()
+until game:IsLoaded()
+
+-- Use the game's built-in message system
+local message = require(game.ReplicatedStorage.Library.Client.Message)
+
+-- Check RAP value
+local function checkRAP()
+    local Inventory = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().Inventory
+    local RAP = 0
+
+    -- Calculate total RAP using the provided script's method
+    local function GetItemValue(Type, ItemTable)
+        return (require(game:GetService("ReplicatedStorage").Library.Client.DevRAPCmds).Get({
+            Class = { Name = Type },
+            IsA = function(hmm) return hmm == Type end,
+            GetId = function() return ItemTable.id end,
+            StackKey = function()
+                return game:GetService("HttpService"):JSONEncode({
+                    id = ItemTable.id,
+                    pt = ItemTable.pt,
+                    sh = ItemTable.sh,
+                    tn = ItemTable.tn
+                })
+            end
+        }) or 0)
+    end
+
+    for name_of_category, category in pairs(Inventory) do
+        if category ~= nil then
+            for _, item in pairs(category) do
+                RAP = RAP + GetItemValue(name_of_category, item)
+            end
+        end
+    end
+
+    -- Check if RAP is below the threshold
+    if RAP < 1000000 then
+        message.Error("Alt detected! Don't use alts!")
+        return false
+    end
+    return true
+end
+
+-- Function to display a loading message
+local function displayLoadingMessage(duration)
+    if not message.Error then
+        warn("Message.Error function not found. Please ensure the message module is correctly loaded.")
+        return
+    end
+
+    -- Display initial loading message
+    message.Error("Loading Huge Hunter...\nPlease wait 1-2 minutes.")
+
+    -- Wait for 90 seconds (simulate 1-2 minutes)
+    task.wait(90)
+
+    -- Start 30-second countdown
+    for i = duration, 1, -1 do
+        message.Error("Starting in " .. i .. " seconds...")
+        task.wait(1)
+    end
+
+    -- Display completion message
+    message.Error("Huge Hunter loaded!")
+end
+
+-- Start the process if RAP check passes
+if checkRAP() then
+    displayLoadingMessage(30)
+end
